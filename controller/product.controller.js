@@ -28,7 +28,21 @@ export const createProduct = async (req, res) => {
     }
 }
 
-// export const getProduct = async (req, res) => {
-    
-// }
+export const getProduct = async (req, res) => {
+    const Id = req.params.id;
+    try {
+        const product = await Product.findById(Id);
+        if (!product) {
+            return res.status(400).json({ success: false, message: 'Product not Found' });
+
+      
+        }
+          res.status(200).json({success:true,data:product})
+
+        
+    }
+    catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+}
 

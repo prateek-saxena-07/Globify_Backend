@@ -13,8 +13,7 @@ app.use('/products',productRouter);
 app.use('/cart', cartRouter);
 
 
-app.listen(PORT, () =>
-{   
+app.listen(PORT, () => {
     console.log(`Server Started at ${PORT}`);
     connectDB();
-})
+});
