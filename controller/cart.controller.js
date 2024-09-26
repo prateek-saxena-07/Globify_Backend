@@ -1,10 +1,8 @@
-import mongoose from "mongoose";
 import Cart from "../model/cart.model.js";
 import Product from '../model/product.model.js';
 
 export const postCart = async (req, res) => {
     const { prodId, quantity } = req.body;
-     console.log("Request Body:", req.body);
     if (!prodId || !quantity)
     {
         return res.status(400).json({message:'Add all fields'})
@@ -12,18 +10,19 @@ export const postCart = async (req, res) => {
    
     try {
         const product = await Product.findById(prodId);
-        if (!product)
-        {
-            return res.status(404).json({ message: 'Product not found' });
+        if (!product || product.stock < quantity) {
+            return res.status(404).json({ message: 'Invalid Product or insufficient Stock ' });
         }
-        if (quantity > product.stock)
-        {
-            return res.status(400).json({ message: 'Requested quantity exceeds stock' });
+       
+        const cart = await Cart.findOne({ userId: req.user.id });
+        if (!cart) {
+            const newCart = new Cart({ userId: req.user.id, items: [{ prodId, quantity }] });
+            await newCart.save();
+            return res.status(201).json(newCart);
         }
-        const cartItem = new Cart({ prodId: prodId, quantity: quantity });
-
-        await cartItem.save();
-        res.status(201).json({message:'Product Added to cart',data:cartItem})
+        cart.items.push({ prodId, quantity });
+        await cart.save();
+        res.status(200).json(cart);
     }
     catch(err) {
        res.status(500).json({ message: `Error Adding Product to cart ${err}` });
@@ -31,12 +30,12 @@ export const postCart = async (req, res) => {
 }
 
 export const putCart = async (req, res) => {
-    const Id = req.params.id;
+   
     try {
-        const CartItem = await Cart.findByIdAndUpdate(Id, req.body, {
-            new: true,
-            runValidator: true,
-        });
+        const CartItem = await Cart.findOneAndUpdate(
+            { userId: req.user.id, 'items.prodId': req.params.id },
+            { $set: { 'items.$.quantity': req.body.quantity } },
+            { new: true });
         if (!CartItem) {
             return res.status(400).json({ success: false, message: 'CartItem not Found' })
         }
@@ -44,14 +43,17 @@ export const putCart = async (req, res) => {
         
     }
     catch (err) {
-        res.status(500).json({ success: false, message: `Error:${err}` });
+        res.status(500).json({ success: false, message: `Error Updating Cart:${err}` });
     }
 }
 
 export const deleteCart = async (req, res) => {
-    const Id = req.params.id;
     try {
-        const CartItemToBeDeleted = await Cart.findByIdAndDelete(Id);
+        const CartItemToBeDeleted =  await Cart.findOneAndUpdate(
+            { userId: req.user.id },
+            { $pull: { items: { prodId: req.params.id } } },
+            { new: true }
+        );
         if (!CartItemToBeDeleted)
         {
             return res.status(400).json({ success: false, message: `Cart item not Found` });
@@ -59,6 +61,6 @@ export const deleteCart = async (req, res) => {
         res.status(200).json({ success: true, message: `Cart item Removed` ,data:CartItemToBeDeleted });
     }
     catch (err) {
-        res.status(500).json({ success: false, message: `Error:${err}` });
+        res.status(500).json({ success: false, message: `Error Removing from Cart:${err}` });
     }
 }
