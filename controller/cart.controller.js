@@ -4,11 +4,12 @@ import mongoose from "mongoose";
 
 export const postCart = async (req, res) => {
     const { prodId, quantity } = req.body;
+    //Validating ProductId and Quantity
     if (!prodId || !quantity)
     {
         return res.status(400).json({message:'Add all fields'})
     }
-
+//validating Proper Product Id format in accordance to MongooseDB
     if (!mongoose.isValidObjectId(prodId)) {
         return res.status(400).json({ message: 'Invalid Product ID format.' });
     }
@@ -20,11 +21,13 @@ export const postCart = async (req, res) => {
         }
        
         const cart = await Cart.findOne({ userId: req.user.id });
+        //Adding Cart item to new User
         if (!cart) {
             const newCart = new Cart({ userId: req.user.id, items: [{ prodId, quantity }] });
             await newCart.save();
             return res.status(201).json(newCart);
         }
+        //Adding CartItem to an existing user
         cart.items.push({ prodId, quantity });
         await cart.save();
         res.status(200).json(cart);
@@ -42,6 +45,7 @@ export const putCart = async (req, res) => {
         return res.status(400).json({ success: false, message: 'Invalid quantity. Quantity must be a positive integer.' });
     }
     
+    //Updating Cartitem for user
     try {
         const CartItem = await Cart.findOneAndUpdate(
             { userId: req.user.id, 'items.prodId': req.params.id },

@@ -1,6 +1,6 @@
 import Product from '../model/product.model.js'
-// import mongoose from 'mongoose'
 
+//Retrieving ALL Products from Server
 export const getAllProducts = async (req, res) => {
     try {
         const product = await Product.find();
@@ -11,6 +11,8 @@ export const getAllProducts = async (req, res) => {
         res.status(500).json({ success: false, message: `Error:${err}` });
     }
 }
+
+// For Creating NewProducts 
 export const createProduct = async (req, res) => {
     const { name, price, description, stock } = req.body;
     if (!name || !price || !stock)
@@ -28,6 +30,7 @@ export const createProduct = async (req, res) => {
     }
 }
 
+//Retrieving Specific Product from Server
 export const getProduct = async (req, res) => {
     const Id = req.params.id;
     try {
