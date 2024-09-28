@@ -1,5 +1,6 @@
 import Cart from "../model/cart.model.js";
 import Product from '../model/product.model.js';
+import mongoose from "mongoose";
 
 export const postCart = async (req, res) => {
     const { prodId, quantity } = req.body;
@@ -7,7 +8,11 @@ export const postCart = async (req, res) => {
     {
         return res.status(400).json({message:'Add all fields'})
     }
-   
+
+    if (!mongoose.isValidObjectId(prodId)) {
+        return res.status(400).json({ message: 'Invalid Product ID format.' });
+    }
+
     try {
         const product = await Product.findById(prodId);
         if (!product || product.stock < quantity) {
@@ -30,7 +35,13 @@ export const postCart = async (req, res) => {
 }
 
 export const putCart = async (req, res) => {
-   
+     const { quantity } = req.body;
+
+    // Validate if quantity is provided and is a valid number
+    if (!Number.isInteger(quantity)) {
+        return res.status(400).json({ success: false, message: 'Invalid quantity. Quantity must be a positive integer.' });
+    }
+    
     try {
         const CartItem = await Cart.findOneAndUpdate(
             { userId: req.user.id, 'items.prodId': req.params.id },
